@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 
 PROVIDER_BASE_URLS = {
-    "proxyapi": "https://api.proxyapi.ru/openai/v1",
-    "routerai": "https://api.routerai.ru/v1",
-    "kodikrouter": "https://llm.kodikrouter.com/v1",
+    "proxyapi": "https://openai.api.proxyapi.ru/v1",
+    "routerai": "https://routerai.ru/api/v1",
+    "kodikrouter": "https://api.kodikrouter.ru/v1",
     "custom": "",
 }
 

@@ -39,7 +39,7 @@ streamlit run streamlit_app.py
 ```
 
 ## Codespaces
-Откройте репозиторий в GitHub Codespaces. Devcontainer установит зависимости командой `pip install -r requirements.txt`. Секреты задавайте через переменные окружения Codespaces или `.env` только локально.
+Откройте репозиторий в GitHub Codespaces. Devcontainer установит Python-зависимости командой `pip install -r requirements.txt`, затем установит Chromium и системные зависимости Playwright командой `python -m playwright install --with-deps chromium`. HTTP-режим остаётся основным: по умолчанию `ENABLE_BROWSER_FETCH=false`, поэтому браузерный fallback включайте только при необходимости для JS-сайтов. Секреты задавайте через переменные окружения Codespaces или `.env` только локально.
 
 ## Настройка LLM-провайдеров
 Переменные читаются в порядке: environment → `st.secrets` → `.env`.
@@ -48,24 +48,26 @@ streamlit run streamlit_app.py
 ```env
 LLM_PROVIDER=proxyapi
 LLM_API_KEY=...
-LLM_BASE_URL=https://api.proxyapi.ru/openai/v1
-LLM_MODEL=gpt-4o-mini
+LLM_BASE_URL=https://openai.api.proxyapi.ru/v1
+LLM_MODEL=openai/gpt-4o-mini
 ```
+
+ProxyAPI настроен через универсальный OpenAI-compatible endpoint. Через него можно использовать модели разных провайдеров, указывая соответствующие идентификаторы моделей с префиксом провайдера, например `openai/gpt-4o-mini`.
 
 ### RouterAI
 ```env
 LLM_PROVIDER=routerai
 LLM_API_KEY=...
-LLM_BASE_URL=https://api.routerai.ru/v1
-LLM_MODEL=...
+LLM_BASE_URL=https://routerai.ru/api/v1
+LLM_MODEL=идентификатор-модели-из-каталога
 ```
 
 ### KodikRouter
 ```env
 LLM_PROVIDER=kodikrouter
 LLM_API_KEY=...
-LLM_BASE_URL=https://llm.kodikrouter.com/v1
-LLM_MODEL=...
+LLM_BASE_URL=https://api.kodikrouter.ru/v1
+LLM_MODEL=идентификатор-модели-из-каталога
 ```
 
 ### Custom OpenAI-compatible
