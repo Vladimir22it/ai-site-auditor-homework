@@ -119,3 +119,19 @@ def test_repair_function_is_testable(proxyapi_like_response):
     llm = FakeLLM([json.dumps(fixed, ensure_ascii=False)])
     result = repair_audit_json(llm, invalid, exc_info.value)
     assert result.confidence == 0.8
+
+
+def test_prompt_example_is_valid_and_does_not_need_repair():
+    from src.audit_service import build_audit_prompt
+    from src.prompts import SYSTEM_PROMPT, VALID_AUDIT_JSON_EXAMPLE_TEXT
+
+    assert VALID_AUDIT_JSON_EXAMPLE_TEXT in SYSTEM_PROMPT
+    assert VALID_AUDIT_JSON_EXAMPLE_TEXT in build_audit_prompt([PageContent(url="https://example.test", text="текст")])
+
+    result = AuditResult.model_validate_json(VALID_AUDIT_JSON_EXAMPLE_TEXT)
+    assert len(result.agents) == 5
+    assert result.top_3_agents == [agent.name for agent in result.agents[:3]]
+
+    llm = FakeLLM([VALID_AUDIT_JSON_EXAMPLE_TEXT])
+    run_audit(llm, [PageContent(url="https://example.test", text="текст")])
+    assert len(llm.calls) == 1
