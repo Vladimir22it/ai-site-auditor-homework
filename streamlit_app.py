@@ -5,7 +5,7 @@ from src.audit_service import run_audit
 from src.chat_service import answer_chat
 from src.config import load_settings
 from src.crawler import crawl_site
-from src.llm_client import LLMClient, LLMConfigurationError
+from src.llm_client import LLMClient, LLMConfigurationError, LLMResponseError
 
 st.set_page_config(page_title="AI Site Auditor", page_icon="🤖", layout="wide")
 st.title("🤖 AI Site Auditor — аудитор возможностей внедрения AI-агентов")
@@ -49,6 +49,11 @@ if analyze:
         st.session_state.warnings = crawl.warnings
     except LLMConfigurationError as exc:
         st.error(str(exc))
+    except LLMResponseError as exc:
+        st.error("Модель вернула результат в неожиданном формате. Приложение попыталось исправить его автоматически, но проверка структуры не прошла.")
+        technical_error = str(exc).replace(settings.llm_api_key or "", "[скрыто]")[:2000]
+        with st.expander("Технические детали для отладки"):
+            st.code(technical_error)
     except Exception as exc:
         st.error(f"Аудит не выполнен: {exc}")
 

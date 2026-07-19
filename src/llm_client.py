@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import json
 import re
+from typing import Any
+
 from openai import OpenAI
+from pydantic import ValidationError
 from tenacity import retry, stop_after_attempt, wait_exponential
+
 from .config import Settings
 from .models import AuditResult
 
@@ -22,14 +26,11 @@ def strip_code_fence(text: str) -> str:
 
 def extract_json_object(text: str) -> str:
     clean = strip_code_fence(text)
-    is_clean_json = False
     try:
         json.loads(clean)
-        is_clean_json = True
-    except json.JSONDecodeError:
-        is_clean_json = False
-    if is_clean_json:
         return clean
+    except json.JSONDecodeError:
+        pass
     start = clean.find("{")
     end = clean.rfind("}")
     if start == -1 or end == -1 or end <= start:
@@ -37,11 +38,35 @@ def extract_json_object(text: str) -> str:
     return clean[start:end + 1]
 
 
+def extract_audit_json_data(text: str) -> dict[str, Any]:
+    try:
+        data = json.loads(extract_json_object(text))
+    except json.JSONDecodeError as exc:
+        raise LLMResponseError(f"Ответ LLM содержит невалидный JSON: {exc}") from exc
+    if not isinstance(data, dict):
+        raise LLMResponseError("Ответ LLM должен быть JSON-объектом")
+    return data
+
+
+def validate_audit_data(data: dict[str, Any]) -> AuditResult:
+    return AuditResult.model_validate(data)
+
+
 def parse_audit_json(text: str) -> AuditResult:
     try:
-        return AuditResult.model_validate_json(extract_json_object(text))
-    except Exception as exc:
+        return validate_audit_data(extract_audit_json_data(text))
+    except ValidationError as exc:
         raise LLMResponseError(f"Не удалось разобрать структурированный ответ LLM: {exc}") from exc
+
+
+def short_validation_errors(exc: ValidationError, limit: int = 8) -> str:
+    lines = []
+    for err in exc.errors()[:limit]:
+        loc = ".".join(str(part) for part in err.get("loc", ()))
+        lines.append(f"{loc}: {err.get('msg')}")
+    if len(exc.errors()) > limit:
+        lines.append(f"...и ещё {len(exc.errors()) - limit} ошибок")
+    return "\n".join(lines)
 
 
 class LLMClient:
